@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snake Game</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="game">
+      <header class="game__header">
+        <div>
+          <h1>Snake</h1>
+          <p class="game__hint">Use arrow keys or WASD to move. Press Space to pause.</p>
+        </div>
+        <div class="game__stats">
+          <div class="stat">
+            <span class="stat__label">Score</span>
+            <span id="score" class="stat__value">0</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Best</span>
+            <span id="best-score" class="stat__value">0</span>
+          </div>
+        </div>
+      </header>
+      <section class="game__board">
+        <canvas id="board" width="400" height="400" aria-label="Snake game board"></canvas>
+        <div id="overlay" class="overlay hidden">
+          <div class="overlay__card">
+            <p id="overlay-title" class="overlay__title">Game Over</p>
+            <p id="overlay-message" class="overlay__message">
+              Press Enter or tap Restart to play again.
+            </p>
+            <button id="restart" class="button">Restart</button>
+          </div>
+        </div>
+      </section>
+      <footer class="game__footer">
+        <p>Eat the food, avoid hitting the walls or yourself.</p>
+      </footer>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

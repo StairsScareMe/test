@@ -12,6 +12,7 @@ const tileCount = canvas.width / gridSize;
 const speed = 120;
 let lastMoveTime = 0;
 let rafId = null;
+let lastFrameTime = 0;
 
 const directions = {
   ArrowUp: { x: 0, y: -1 },
@@ -25,6 +26,11 @@ const directions = {
 };
 
 let state = {};
+const physicsSettings = {
+  spring: 40,
+  damping: 10,
+  maxStep: 0.05,
+};
 
 const loadBestScore = () => {
   const stored = Number(localStorage.getItem("snake-best"));
@@ -53,6 +59,7 @@ const resetGame = () => {
       { x: 7, y: 10 },
       { x: 6, y: 10 },
     ],
+    displaySnake: [],
     direction: { x: 1, y: 0 },
     queuedDirection: { x: 1, y: 0 },
     food: null,
@@ -62,6 +69,12 @@ const resetGame = () => {
     gameOver: false,
   };
   state.food = placeFood(state.snake);
+  state.displaySnake = state.snake.map((segment) => ({
+    x: segment.x * gridSize + gridSize / 2,
+    y: segment.y * gridSize + gridSize / 2,
+    vx: 0,
+    vy: 0,
+  }));
   scoreEl.textContent = state.score;
   bestScoreEl.textContent = state.bestScore;
   overlay.classList.add("hidden");
@@ -122,6 +135,37 @@ const step = () => {
   } else {
     state.snake.pop();
   }
+
+  while (state.displaySnake.length < state.snake.length) {
+    const tail = state.snake[state.snake.length - 1];
+    state.displaySnake.push({
+      x: tail.x * gridSize + gridSize / 2,
+      y: tail.y * gridSize + gridSize / 2,
+      vx: 0,
+      vy: 0,
+    });
+  }
+  while (state.displaySnake.length > state.snake.length) {
+    state.displaySnake.pop();
+  }
+};
+
+const updateDisplaySnake = (deltaTime) => {
+  const dt = Math.min(deltaTime, physicsSettings.maxStep);
+  state.displaySnake.forEach((segment, index) => {
+    const target = state.snake[index];
+    if (!target) return;
+    const targetX = target.x * gridSize + gridSize / 2;
+    const targetY = target.y * gridSize + gridSize / 2;
+    const dx = targetX - segment.x;
+    const dy = targetY - segment.y;
+    const ax = dx * physicsSettings.spring - segment.vx * physicsSettings.damping;
+    const ay = dy * physicsSettings.spring - segment.vy * physicsSettings.damping;
+    segment.vx += ax * dt;
+    segment.vy += ay * dt;
+    segment.x += segment.vx * dt;
+    segment.y += segment.vy * dt;
+  });
 };
 
 const drawGrid = () => {
@@ -142,11 +186,11 @@ const drawGrid = () => {
 };
 
 const drawSnake = () => {
-  state.snake.forEach((segment, index) => {
+  state.displaySnake.forEach((segment, index) => {
     context.fillStyle = index === 0 ? "#38bdf8" : "#22c55e";
     context.fillRect(
-      segment.x * gridSize + 1,
-      segment.y * gridSize + 1,
+      segment.x - gridSize / 2 + 1,
+      segment.y - gridSize / 2 + 1,
       gridSize - 2,
       gridSize - 2
     );
@@ -170,10 +214,17 @@ const gameLoop = (timestamp) => {
   if (!lastMoveTime) {
     lastMoveTime = timestamp;
   }
+  if (!lastFrameTime) {
+    lastFrameTime = timestamp;
+  }
   if (timestamp - lastMoveTime >= speed) {
     step();
     lastMoveTime = timestamp;
   }
+
+  const deltaTime = (timestamp - lastFrameTime) / 1000;
+  updateDisplaySnake(deltaTime);
+  lastFrameTime = timestamp;
 
   drawGrid();
   drawFood();
@@ -186,6 +237,7 @@ const startLoop = () => {
     window.cancelAnimationFrame(rafId);
   }
   lastMoveTime = 0;
+  lastFrameTime = 0;
   rafId = window.requestAnimationFrame(gameLoop);
 };
 
